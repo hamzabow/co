@@ -1,7 +1,11 @@
 package main
 
-import "co/internal/genmessage"
+import (
+	"co/internal/apikeyinput"
+	// "co/internal/genmessage"
+)
 
 func main() {
-	genmessage.GenerateCommitMessage()
+	// genmessage.GenerateCommitMessage()
+	apikeyinput.PromptApiKey()
 }
