@@ -1,11 +1,15 @@
 package main
 
 import (
-	"co/internal/apikeyinput"
-	// "co/internal/genmessage"
+	"co/internal/genmessage"
+	"co/internal/messagetextarea"
+	"log"
 )
 
 func main() {
-	// genmessage.GenerateCommitMessage()
-	apikeyinput.PromptApiKey()
+	response, err := genmessage.GenerateCommitMessage()
+	if err != nil {
+		log.Fatalf("Error message: %v", err)
+	}
+	messagetextarea.MessageTextArea(response)
 }

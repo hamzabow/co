@@ -2,6 +2,7 @@ package genmessage
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"os/exec"
@@ -12,11 +13,17 @@ import (
 	_ "github.com/joho/godotenv/autoload"
 )
 
-func GenerateCommitMessage() {
+var (
+	ErrMissingAPIKey     = errors.New("missing OPENAI_API_KEY environment variable")
+	ErrFailedToGetDiffs  = errors.New("failed to get git diffs")
+	ErrNoChangesInRepo   = errors.New("No changes detected in the repository")
+	ErrOpenAIFetchFailed = errors.New("failed to fetch response from OpenAI API")
+)
+
+func GenerateCommitMessage() (string, error) {
 	key := os.Getenv("OPENAI_API_KEY")
 	if key == "" {
-		fmt.Println("Error: OPENAI_API_KEY env variable is not set")
-		return
+		return "", ErrMissingAPIKey
 	}
 
 	client := openai.NewClient(option.WithAPIKey(key))
@@ -24,13 +31,11 @@ func GenerateCommitMessage() {
 	diff, err := getGitDiff()
 
 	if err != nil {
-		fmt.Println("Failed to get diffs:", err)
-		return
+		return "", ErrFailedToGetDiffs
 	}
 
 	if diff == "" {
-		fmt.Println("No changes detected in the repository.")
-		return
+		return "", ErrNoChangesInRepo
 	}
 
 	prompt := fmt.Sprintf(
@@ -47,10 +52,10 @@ Generate a concise and clear commit message describing these changes.`, diff)
 		Model: openai.F(openai.ChatModelGPT4o),
 	})
 	if err != nil {
-		fmt.Println("Failed to prompt OpenAI API:", err)
-		return
+		return "", ErrOpenAIFetchFailed
 	}
-	println(chatCompletion.Choices[0].Message.Content)
+	response := chatCompletion.Choices[0].Message.Content
+	return response, nil
 
 }
 
