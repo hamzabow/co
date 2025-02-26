@@ -88,9 +88,7 @@ BREAKING CHANGE: Authentication API now requires JWT tokens instead of session I
 ` + "```\n%s\n```\n\n" + `Ensure the message is concise and meaningful. Return only the commit message, no extra text, and don't wrap the commit message with code blocks.`
 
 var GitmojiPrompt = "Generate a commit message that follows the **Gitmoji** " +
-	"specification using the **Unicode format** for emojis. " +
-	"The commit message should describe the following changes (output of command `git diff --staged`):" +
-	"\n```\n%s\n```\n\n" +
+	"specification using the **Unicode format** for emojis.\n\n" +
 	"### **Commit Message Format:**\n" +
 	"- **Start with a Gitmoji in Unicode format** representing the intention of the change.\n" +
 	"- **Optionally include a scope** in parentheses if relevant.\n" +
@@ -106,12 +104,13 @@ var GitmojiPrompt = "Generate a commit message that follows the **Gitmoji** " +
 	"📈 Add analytics to the dashboard\n" +
 	"🌐 Support Japanese language\n" +
 	"♿️ (account): Improve modals a11y\n\n" +
-	"Ensure the commit message follows this format strictly. Return only the commit message, no extra text, and don't wrap it with code blocks."
+	"Ensure the commit message follows this format strictly. " +
+	"Return only the commit message, no extra text, and don't wrap it with code blocks.\n\n" +
+	"The commit message should describe the following changes (output of command `git diff --staged`):" +
+	"\n```\n%s\n```"
 
 var GitmojiShortcodePrompt = "Generate a commit message that follows the **Gitmoji** " +
-	"specification using the **shortcode format** for emojis. " +
-	"The commit message should describe the following changes (output of command `git diff --staged`):" +
-	"\n```\n%s\n```\n\n" +
+	"specification using the **shortcode format** for emojis.\n\n" +
 	"### **Commit Message Format:**\n" +
 	"- **Start with a Gitmoji in Shortcode format** (e.g., `:zap:`, `:bug:`, `:bookmark:`).\n" +
 	"- **Optionally include a scope** in parentheses if relevant.\n" +
@@ -128,4 +127,6 @@ var GitmojiShortcodePrompt = "Generate a commit message that follows the **Gitmo
 	":globe_with_meridians: Support Japanese language\n" +
 	":wheelchair: (account): Improve modals a11y\n\n" +
 	"Ensure the commit message follows this format strictly. " +
-	"Return only the commit message, no extra text, and don't wrap it with code blocks."
+	"Return only the commit message, no extra text, and don't wrap it with code blocks.\n\n" +
+	"The commit message should describe the following changes (output of command `git diff --staged`):" +
+	"\n```\n%s\n```"
