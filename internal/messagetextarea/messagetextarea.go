@@ -6,6 +6,7 @@ import (
 
 	"github.com/charmbracelet/bubbles/textarea"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 )
 
 // func MessageTextArea(msg string) string {
@@ -37,6 +38,15 @@ func initialModel(initialValue string) model {
 	ti.SetWidth(80)
 	ti.SetHeight(10)
 	ti.ShowLineNumbers = false
+
+	ti.Prompt = " "
+
+	pinkColor := lipgloss.Color("212")
+	ti.FocusedStyle.Base = ti.FocusedStyle.Base.Border(lipgloss.RoundedBorder()).BorderForeground(lipgloss.Color("69"))
+	ti.FocusedStyle.Text = ti.FocusedStyle.Text.Foreground(pinkColor)
+	ti.FocusedStyle.CursorLine = ti.FocusedStyle.CursorLine.Foreground(pinkColor)
+	ti.BlurredStyle.Text = ti.BlurredStyle.Text.Foreground(lipgloss.Color("240"))
+
 	return model{
 		textarea: ti,
 		err:      nil,

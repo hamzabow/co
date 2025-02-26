@@ -28,13 +28,14 @@ func main() {
 				retries -= 1
 			}
 			if retries <= 0 && key == "" {
-				fmt.Println("--------------------------------------------------------------------")
+				fmt.Println("---------------------------------------------------------------------")
 				fmt.Printf("You have entered an invalid API key %d times. Please try again later.\n", max_retries)
-				fmt.Println("--------------------------------------------------------------------")
+				fmt.Println("---------------------------------------------------------------------")
 				os.Exit(1)
 			}
 		}
 	}
+	// from now on, key is not empty
 	response, err := genmessage.GenerateCommitMessage(key)
 	if err != nil {
 		log.Fatalf("Error message: %v", err)
