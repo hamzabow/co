@@ -1,4 +1,4 @@
-package genmessage
+package prompts
 
 var SimplePrompt = "Generate a concise and clear commit message describing " +
 	"the following changes (output of `git diff`):\n```\n%s\n```\n\nEnsure the message is concise and meaningful. Return only the commit message, no extra text, and don't wrap the commit message with code blocks."

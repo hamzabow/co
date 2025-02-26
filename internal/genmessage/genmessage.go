@@ -7,6 +7,7 @@ import (
 	"os/exec"
 	"time"
 
+	"github.com/hamzabow/co/internal/prompts"
 	"github.com/openai/openai-go"
 	"github.com/openai/openai-go/option"
 
@@ -61,13 +62,8 @@ func GenerateCommitMessage(key string) (string, error) {
 		return "", ErrNoChangesInRepo
 	}
 
-	prompt := fmt.Sprintf(
-		`
-Here are the git diffs:
-
-%s
-
-Generate a concise and clear commit message describing these changes.`, diff)
+	// prompt := fmt.Sprintf(prompts.GitmojiPrompt, diff)
+	prompt := fmt.Sprintf(prompts.LongConventionalCommitsPrompt, diff)
 
 	// Create a new custom spinner model
 	s := customSpinnerModel{
