@@ -94,9 +94,12 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m model) View() string {
+	// Create a subtle gray style for the help text
+	helpStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("240"))
+
 	return fmt.Sprintf(
 		"Here is the commit message:\n\n%s\n\n%s",
 		m.textarea.View(),
-		"(ctrl+c to quit)",
+		helpStyle.Render("  Ctrl+C to quit, Ctrl+Enter to commit"),
 	) + "\n\n"
 }
