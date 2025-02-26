@@ -75,7 +75,7 @@ Generate a concise and clear commit message describing these changes.`, diff)
 		message: lipgloss.NewStyle().Foreground(lipgloss.Color("5")).Render("Generating commit message..."),
 	}
 	s.Spinner = spinner.Dot
-	s.Style = lipgloss.NewStyle().Foreground(lipgloss.Color("5")).PaddingLeft(2) // Standard magenta with left padding
+	s.Style = lipgloss.NewStyle().Foreground(lipgloss.Color("5")).PaddingLeft(2).PaddingTop(1) // Standard magenta with left padding
 
 	// Start the spinner in a separate goroutine
 	p := tea.NewProgram(s)
