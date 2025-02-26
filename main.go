@@ -1,8 +1,10 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"os"
+	"os/exec"
 
 	"github.com/hamzabow/co/internal/apikeyinput"
 	"github.com/hamzabow/co/internal/genmessage"
@@ -23,5 +25,26 @@ func main() {
 	if err != nil {
 		log.Fatalf("Error message: %v", err)
 	}
-	messagetextarea.MessageTextArea(response)
+	commitMessage, commitResult := messagetextarea.MessageTextArea(response)
+
+	if commitMessage == "" {
+		fmt.Println("No commit message provided")
+		return
+	}
+
+	if commitResult == messagetextarea.ResultCommit {
+		commit(commitMessage)
+	} else {
+		fmt.Println("Commit cancelled")
+		return
+	}
+}
+
+func commit(msg string) {
+	cmd := exec.Command("git", "commit", "-m", msg)
+	err := cmd.Run()
+	if err != nil {
+		log.Fatalf("Error message: %v", err)
+	}
+	fmt.Println("Commit successful")
 }

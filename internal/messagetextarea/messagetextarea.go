@@ -9,8 +9,15 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
+type CommitResult int
+
+const (
+	ResultCancel CommitResult = iota
+	ResultCommit
+)
+
 // func MessageTextArea(msg string) string {
-func MessageTextArea(msg string) string {
+func MessageTextArea(msg string) (string, CommitResult) {
 	p := tea.NewProgram(initialModel(msg))
 
 	m, err := p.Run()
@@ -18,9 +25,10 @@ func MessageTextArea(msg string) string {
 		log.Fatal(err)
 	}
 
-	text := m.(model).textarea.Value()
+	finalModel := m.(model)
+	text := finalModel.textarea.Value()
 
-	return text
+	return text, finalModel.result
 }
 
 type errMsg error
@@ -28,6 +36,7 @@ type errMsg error
 type model struct {
 	textarea textarea.Model
 	err      error
+	result   CommitResult
 }
 
 func initialModel(initialValue string) model {
@@ -50,6 +59,7 @@ func initialModel(initialValue string) model {
 	return model{
 		textarea: ti,
 		err:      nil,
+		result:   ResultCancel,
 	}
 }
 
@@ -69,11 +79,13 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.textarea.Blur()
 			}
 		case tea.KeyCtrlC:
+			m.result = ResultCancel
 			return m, tea.Quit
 		case tea.KeyEnter:
 			// Don't do anything special for regular Enter
 			// Let it pass to the textarea for normal processing
 		case tea.KeyCtrlJ: // Ctrl+Enter is often mapped to Ctrl+J in terminals
+			m.result = ResultCommit
 			return m, tea.Quit
 		default:
 			if !m.textarea.Focused() {
