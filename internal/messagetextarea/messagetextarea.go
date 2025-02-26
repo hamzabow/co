@@ -41,10 +41,10 @@ func initialModel(initialValue string) model {
 
 	ti.Prompt = " "
 
-	pinkColor := lipgloss.Color("212")
+	textColor := lipgloss.Color("212")
 	ti.FocusedStyle.Base = ti.FocusedStyle.Base.Border(lipgloss.RoundedBorder()).BorderForeground(lipgloss.Color("69"))
-	ti.FocusedStyle.Text = ti.FocusedStyle.Text.Foreground(pinkColor)
-	ti.FocusedStyle.CursorLine = ti.FocusedStyle.CursorLine.Foreground(pinkColor)
+	ti.FocusedStyle.Text = ti.FocusedStyle.Text.Foreground(textColor)
+	ti.FocusedStyle.CursorLine = ti.FocusedStyle.CursorLine.Foreground(textColor)
 	ti.BlurredStyle.Text = ti.BlurredStyle.Text.Foreground(lipgloss.Color("240"))
 
 	return model{
