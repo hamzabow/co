@@ -12,6 +12,7 @@ import (
 
 	spinner "github.com/charmbracelet/bubbles/spinner"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 	_ "github.com/joho/godotenv/autoload"
 )
 
@@ -25,6 +26,7 @@ var (
 // Define a custom model that embeds spinner.Model and implements tea.Model
 type customSpinnerModel struct {
 	spinner.Model
+	message string
 }
 
 // Implement the Init method for the custom model
@@ -35,7 +37,14 @@ func (m customSpinnerModel) Init() tea.Cmd {
 // Implement the Update method for the custom model
 func (m customSpinnerModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	newModel, cmd := m.Model.Update(msg)
-	return customSpinnerModel{newModel}, cmd
+	m.Model = newModel
+	return m, cmd
+}
+
+// Implement the View method for the custom model
+func (m customSpinnerModel) View() string {
+	// Apply the style to both the spinner and the message text
+	return m.Model.View() + " " + m.message
 }
 
 func GenerateCommitMessage(key string) (string, error) {
@@ -61,8 +70,12 @@ Here are the git diffs:
 Generate a concise and clear commit message describing these changes.`, diff)
 
 	// Create a new custom spinner model
-	s := customSpinnerModel{spinner.New()}
+	s := customSpinnerModel{
+		Model:   spinner.New(),
+		message: lipgloss.NewStyle().Foreground(lipgloss.Color("5")).Render("Generating commit message..."),
+	}
 	s.Spinner = spinner.Dot
+	s.Style = lipgloss.NewStyle().Foreground(lipgloss.Color("5")) // Standard magenta
 
 	// Start the spinner in a separate goroutine
 	p := tea.NewProgram(s)
