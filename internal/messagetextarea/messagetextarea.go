@@ -70,6 +70,11 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 		case tea.KeyCtrlC:
 			return m, tea.Quit
+		case tea.KeyEnter:
+			// Don't do anything special for regular Enter
+			// Let it pass to the textarea for normal processing
+		case tea.KeyCtrlJ: // Ctrl+Enter is often mapped to Ctrl+J in terminals
+			return m, tea.Quit
 		default:
 			if !m.textarea.Focused() {
 				cmd = m.textarea.Focus()
