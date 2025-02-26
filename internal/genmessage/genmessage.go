@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"os/exec"
+	"time"
 
 	"github.com/openai/openai-go"
 	"github.com/openai/openai-go/option"
@@ -28,7 +29,7 @@ type customSpinnerModel struct {
 
 // Implement the Init method for the custom model
 func (m customSpinnerModel) Init() tea.Cmd {
-	return nil
+	return m.Model.Tick
 }
 
 // Implement the Update method for the custom model
@@ -78,8 +79,10 @@ Generate a concise and clear commit message describing these changes.`, diff)
 		Model: openai.F(openai.ChatModelGPT4o),
 	})
 
-	// Stop the spinner
+	// Ensure the spinner stops completely
 	p.Quit()
+	// Give a small pause to allow the spinner goroutine to clean up
+	time.Sleep(100 * time.Millisecond)
 
 	if err != nil {
 		return "", ErrOpenAIFetchFailed
