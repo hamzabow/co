@@ -1,12 +1,34 @@
 package apikeyinput
 
 import (
+	"errors"
 	"fmt"
 	"log"
 
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 )
+
+var ErrEmptyApiKey = errors.New("you have entered an empty API key multiple times. Please try again later")
+
+func PromptApiKeyWithRetries() (string, error) {
+	key := PromptApiKey()
+	if key == "" {
+		max_retries := 3
+		retries := max_retries
+		for key == "" && retries > 0 {
+			fmt.Println("-------------------------------------------------")
+			fmt.Println("Key is empty! Please enter a valid OpenAI API KEY")
+			fmt.Println("-------------------------------------------------")
+			key = PromptApiKey()
+			retries -= 1
+		}
+		if retries <= 0 && key == "" {
+			return "", ErrEmptyApiKey
+		}
+	}
+	return key, nil
+}
 
 func PromptApiKey() string {
 	p := tea.NewProgram(initialModel())
