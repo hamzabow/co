@@ -1,11 +1,11 @@
 package main
 
 import (
-	"co/internal/apikeyinput"
-	"co/internal/genmessage"
-	"co/internal/messagetextarea"
 	"errors"
 	"fmt"
+	"github.com/hamzabow/co/internal/apikeyinput"
+	"github.com/hamzabow/co/internal/genmessage"
+	"github.com/hamzabow/co/internal/messagetextarea"
 	"log"
 	"os"
 )
