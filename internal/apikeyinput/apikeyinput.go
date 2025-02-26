@@ -8,12 +8,16 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-func PromptApiKey() {
+func PromptApiKey() string {
 	p := tea.NewProgram(initialModel())
-	if _, err := p.Run(); err != nil {
+	m, err := p.Run()
+	if err != nil {
 		log.Fatal(err)
 	}
 
+	text := m.(model).textInput.Value()
+
+	return text
 }
 
 type (
@@ -76,7 +80,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (m model) View() string {
 	return fmt.Sprintf(
-		"Type your OpenAI API key:\n\n%s\n\n%s",
+		"Enter your OpenAI API key:\n\n%s\n\n%s",
 		m.textInput.View(),
 		"(Escape to quit, Ctrl+P to show/hide password)",
 	) + "\n"

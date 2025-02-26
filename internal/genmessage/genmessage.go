@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"os"
 	"os/exec"
 
 	"github.com/openai/openai-go"
@@ -20,11 +19,7 @@ var (
 	ErrOpenAIFetchFailed = errors.New("failed to fetch response from OpenAI API")
 )
 
-func GenerateCommitMessage() (string, error) {
-	key := os.Getenv("OPENAI_API_KEY")
-	if key == "" {
-		return "", ErrMissingAPIKey
-	}
+func GenerateCommitMessage(key string) (string, error) {
 
 	client := openai.NewClient(option.WithAPIKey(key))
 
