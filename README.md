@@ -12,16 +12,20 @@
   - Gitmoji (Unicode or shortcode format)
   - Simple format
 
+## Prerequisites
+
+- Git installed and configured
+- An OpenAI API key (with access to GPT-4o)
+
 ## Installation
+
+You'll need Go (Golang) installed so that you can run the following command to install `co`:
 
 ```bash
 go install github.com/hamzabow/co@latest
 ```
 
-## Prerequisites
-
-- Git installed and configured
-- An OpenAI API key (with access to GPT-4o)
+Once installed, you can use `co` in any git repository. See the Usage section below for instructions.
 
 ## Setup
 
