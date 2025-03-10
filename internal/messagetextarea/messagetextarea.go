@@ -1,8 +1,8 @@
 package messagetextarea
 
 import (
-	"fmt"
 	"log"
+	"strings"
 
 	"github.com/charmbracelet/bubbles/textarea"
 	tea "github.com/charmbracelet/bubbletea"
@@ -39,22 +39,50 @@ type model struct {
 	result   CommitResult
 }
 
+var (
+	// Title style with white text on purple background
+	titleStyle = lipgloss.NewStyle().
+			Bold(true).
+			Foreground(lipgloss.Color("#FAFAFA")).
+			Background(lipgloss.Color("#7D56F4")).
+			PaddingLeft(2).
+			PaddingRight(2).
+			MarginBottom(0)
+
+	// Container style for the entire view
+	containerStyle = lipgloss.NewStyle().
+			MarginLeft(1)
+
+	// Input box style
+	inputBoxStyle = lipgloss.NewStyle().
+			Border(lipgloss.RoundedBorder()).
+			BorderForeground(lipgloss.Color("#7D56F4")).
+			Padding(1).
+			Width(80)
+
+	// Help text style
+	helpStyle = lipgloss.NewStyle().
+			Foreground(lipgloss.Color("#626262")).
+			MarginTop(1)
+)
+
 func initialModel(initialValue string) model {
 	ti := textarea.New()
 	ti.SetValue(initialValue)
 	ti.Placeholder = "Commit message ..."
 	ti.Focus()
-	ti.SetWidth(80)
+	ti.SetWidth(78) // Slightly narrower to account for the border
 	ti.SetHeight(10)
 	ti.ShowLineNumbers = false
 
 	ti.Prompt = " "
 
-	textColor := lipgloss.Color("212")
-	ti.FocusedStyle.Base = ti.FocusedStyle.Base.Border(lipgloss.RoundedBorder()).BorderForeground(lipgloss.Color("69"))
-	ti.FocusedStyle.Text = ti.FocusedStyle.Text.Foreground(textColor)
-	ti.FocusedStyle.CursorLine = ti.FocusedStyle.CursorLine.Foreground(textColor)
-	ti.BlurredStyle.Text = ti.BlurredStyle.Text.Foreground(lipgloss.Color("240"))
+	// Match the color scheme with the API key input
+	ti.FocusedStyle.Base = lipgloss.NewStyle().
+		BorderForeground(lipgloss.Color("#7D56F4"))
+	ti.FocusedStyle.Text = ti.FocusedStyle.Text.Foreground(lipgloss.Color("#FAFAFA"))
+	ti.FocusedStyle.CursorLine = ti.FocusedStyle.CursorLine.Foreground(lipgloss.Color("#FAFAFA"))
+	ti.BlurredStyle.Text = ti.BlurredStyle.Text.Foreground(lipgloss.Color("#626262"))
 
 	return model{
 		textarea: ti,
@@ -106,12 +134,17 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m model) View() string {
-	// Create a subtle gray style for the help text
-	helpStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("240"))
+	var view strings.Builder
 
-	return fmt.Sprintf(
-		"Here is the commit message:\n\n%s\n\n%s",
-		m.textarea.View(),
-		helpStyle.Render("  Ctrl+C to quit, Ctrl+Enter to commit"),
-	) + "\n\n"
+	view.WriteString(titleStyle.Render(" Commit Message "))
+	view.WriteString("\n\n")
+
+	// Wrap the textarea in the inputBoxStyle
+	view.WriteString(inputBoxStyle.Render(m.textarea.View()))
+	view.WriteString("\n")
+
+	view.WriteString(helpStyle.Render("  Ctrl+C to quit, Ctrl+Enter to commit"))
+
+	// Apply container style to the entire view
+	return containerStyle.Render(view.String())
 }
