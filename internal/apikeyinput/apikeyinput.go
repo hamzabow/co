@@ -4,42 +4,63 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"strings"
 
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 )
 
-var ErrEmptyApiKey = errors.New("you have entered an empty API key multiple times. Please try again later")
+var (
+	ErrEmptyApiKey = errors.New("you have entered an empty API key multiple times. Please try again later")
+
+	// Styles
+	titleStyle = lipgloss.NewStyle().
+			Bold(true).
+			Foreground(lipgloss.Color("#FAFAFA")).
+			Background(lipgloss.Color("#7D56F4")).
+			PaddingLeft(2).
+			PaddingRight(2).
+			MarginBottom(1)
+
+	inputBoxStyle = lipgloss.NewStyle().
+			Border(lipgloss.RoundedBorder()).
+			BorderForeground(lipgloss.Color("#7D56F4")).
+			Padding(1).
+			Width(50)
+
+	errorStyle = lipgloss.NewStyle().
+			Foreground(lipgloss.Color("#FF5555")).
+			MarginTop(1)
+
+	helpStyle = lipgloss.NewStyle().
+			Foreground(lipgloss.Color("#626262")).
+			MarginTop(1)
+
+	attemptStyle = lipgloss.NewStyle().
+			Foreground(lipgloss.Color("#7D56F4")).
+			MarginTop(1)
+)
 
 func PromptApiKeyWithRetries() (string, error) {
-	key, userQuit := PromptApiKey()
+	m := initialModel()
+	p := tea.NewProgram(m)
+	finalModel, err := p.Run()
+	if err != nil {
+		log.Fatal(err)
+	}
 
-	// Exit immediately if user explicitly requested to quit
-	if userQuit {
+	m = finalModel.(model)
+
+	if m.userQuit {
 		return "", errors.New("user cancelled the operation")
 	}
 
-	if key == "" {
-		max_retries := 3
-		retries := max_retries
-		for key == "" && retries > 0 {
-			fmt.Println("-------------------------------------------------")
-			fmt.Println("Key is empty! Please enter a valid OpenAI API KEY")
-			fmt.Println("-------------------------------------------------")
-			key, userQuit = PromptApiKey()
-
-			// Exit if user requested to quit during retry
-			if userQuit {
-				return "", errors.New("user cancelled the operation")
-			}
-
-			retries -= 1
-		}
-		if retries <= 0 && key == "" {
-			return "", ErrEmptyApiKey
-		}
+	if m.attempts >= m.maxAttempts && m.textInput.Value() == "" {
+		return "", ErrEmptyApiKey
 	}
-	return key, nil
+
+	return m.textInput.Value(), nil
 }
 
 func PromptApiKey() (string, bool) {
@@ -55,29 +76,32 @@ func PromptApiKey() (string, bool) {
 	return text, finalModel.userQuit
 }
 
-type (
-	errMsg error
-)
+type errMsg error
 
 type model struct {
-	textInput textinput.Model
-	err       error
-	userQuit  bool
+	textInput   textinput.Model
+	err         error
+	userQuit    bool
+	attempts    int
+	maxAttempts int
+	showError   bool
 }
 
 func initialModel() model {
 	ti := textinput.New()
-	ti.Placeholder = "..."
+	ti.Placeholder = "sk-..."
 	ti.Focus()
 	ti.EchoMode = textinput.EchoPassword
 	ti.EchoCharacter = '•'
-	// ti.CharLimit = 156
-	// ti.Width = 20
+	ti.Width = 48
 
 	return model{
-		textInput: ti,
-		err:       nil,
-		userQuit:  false,
+		textInput:   ti,
+		err:         nil,
+		userQuit:    false,
+		attempts:    0,
+		maxAttempts: 3,
+		showError:   false,
 	}
 }
 
@@ -92,12 +116,24 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyMsg:
 		switch msg.Type {
 		case tea.KeyEnter:
+			if m.textInput.Value() == "" {
+				// Increment attempt counter and show error
+				m.attempts++
+				m.showError = true
+
+				if m.attempts >= m.maxAttempts {
+					return m, tea.Quit
+				}
+
+				return m, nil
+			}
 			return m, tea.Quit
+
 		case tea.KeyCtrlC, tea.KeyEsc:
 			m.userQuit = true
 			return m, tea.Quit
-		case tea.KeyCtrlP:
 
+		case tea.KeyCtrlP:
 			if m.textInput.EchoMode != textinput.EchoPassword {
 				m.textInput.EchoMode = textinput.EchoPassword
 				m.textInput.EchoCharacter = '•'
@@ -105,10 +141,13 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.textInput.EchoMode = textinput.EchoNormal
 			}
 
-			// m.toggleEchoMode()
+		default:
+			// When the user starts typing after an error, hide the error
+			if m.showError && len(msg.String()) > 0 {
+				m.showError = false
+			}
 		}
 
-	// We handle errors just like any other message
 	case errMsg:
 		m.err = msg
 		return m, nil
@@ -119,11 +158,36 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m model) View() string {
-	return fmt.Sprintf(
-		"Enter your OpenAI API key:\n\n%s\n\n%s",
-		m.textInput.View(),
-		"(Escape to quit, Ctrl+P to show/hide password)",
-	) + "\n"
+	var view strings.Builder
+
+	view.WriteString(titleStyle.Render(" OpenAI API Key "))
+	view.WriteString("\n\n")
+
+	view.WriteString(inputBoxStyle.Render(m.textInput.View()))
+	view.WriteString("\n")
+
+	if m.showError {
+		remainingAttempts := m.maxAttempts - m.attempts
+		errorMessage := "API key cannot be empty!"
+
+		if remainingAttempts > 0 {
+			errorMessage += fmt.Sprintf(" (%d attempts remaining)", remainingAttempts)
+		} else {
+			errorMessage += " (last attempt)"
+		}
+
+		view.WriteString(errorStyle.Render(errorMessage))
+		view.WriteString("\n")
+	}
+
+	if m.attempts > 0 && !m.showError {
+		view.WriteString(attemptStyle.Render(fmt.Sprintf("Attempt %d of %d", m.attempts+1, m.maxAttempts)))
+		view.WriteString("\n")
+	}
+
+	view.WriteString(helpStyle.Render("Press Esc to quit, Ctrl+P to toggle visibility"))
+
+	return view.String()
 }
 
 func (m model) toggleEchoMode() {
