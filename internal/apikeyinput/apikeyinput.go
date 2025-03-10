@@ -12,7 +12,13 @@ import (
 var ErrEmptyApiKey = errors.New("you have entered an empty API key multiple times. Please try again later")
 
 func PromptApiKeyWithRetries() (string, error) {
-	key := PromptApiKey()
+	key, userQuit := PromptApiKey()
+
+	// Exit immediately if user explicitly requested to quit
+	if userQuit {
+		return "", errors.New("user cancelled the operation")
+	}
+
 	if key == "" {
 		max_retries := 3
 		retries := max_retries
@@ -20,7 +26,13 @@ func PromptApiKeyWithRetries() (string, error) {
 			fmt.Println("-------------------------------------------------")
 			fmt.Println("Key is empty! Please enter a valid OpenAI API KEY")
 			fmt.Println("-------------------------------------------------")
-			key = PromptApiKey()
+			key, userQuit = PromptApiKey()
+
+			// Exit if user requested to quit during retry
+			if userQuit {
+				return "", errors.New("user cancelled the operation")
+			}
+
 			retries -= 1
 		}
 		if retries <= 0 && key == "" {
@@ -30,16 +42,17 @@ func PromptApiKeyWithRetries() (string, error) {
 	return key, nil
 }
 
-func PromptApiKey() string {
+func PromptApiKey() (string, bool) {
 	p := tea.NewProgram(initialModel())
 	m, err := p.Run()
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	text := m.(model).textInput.Value()
+	finalModel := m.(model)
+	text := finalModel.textInput.Value()
 
-	return text
+	return text, finalModel.userQuit
 }
 
 type (
@@ -49,6 +62,7 @@ type (
 type model struct {
 	textInput textinput.Model
 	err       error
+	userQuit  bool
 }
 
 func initialModel() model {
@@ -63,6 +77,7 @@ func initialModel() model {
 	return model{
 		textInput: ti,
 		err:       nil,
+		userQuit:  false,
 	}
 }
 
@@ -76,7 +91,10 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.Type {
-		case tea.KeyEnter, tea.KeyCtrlC, tea.KeyEsc:
+		case tea.KeyEnter:
+			return m, tea.Quit
+		case tea.KeyCtrlC, tea.KeyEsc:
+			m.userQuit = true
 			return m, tea.Quit
 		case tea.KeyCtrlP:
 
