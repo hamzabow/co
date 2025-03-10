@@ -21,7 +21,12 @@ var (
 			Background(lipgloss.Color("#7D56F4")).
 			PaddingLeft(2).
 			PaddingRight(2).
-			MarginBottom(1)
+			MarginBottom(0)
+
+	// Add a new container style for the entire view
+	containerStyle = lipgloss.NewStyle().
+			MarginTop(1).
+			MarginLeft(1)
 
 	inputBoxStyle = lipgloss.NewStyle().
 			Border(lipgloss.RoundedBorder()).
@@ -185,9 +190,10 @@ func (m model) View() string {
 		view.WriteString("\n")
 	}
 
-	view.WriteString(helpStyle.Render("Press Esc to quit, Ctrl+P to toggle visibility"))
+	view.WriteString(helpStyle.Render("Press Enter to submit, Esc to quit, Ctrl+P to toggle visibility"))
 
-	return view.String()
+	// Apply container style to the entire view
+	return containerStyle.Render(view.String())
 }
 
 func (m model) toggleEchoMode() {
