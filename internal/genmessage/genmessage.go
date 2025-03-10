@@ -67,11 +67,20 @@ func GenerateCommitMessage(key string) (string, error) {
 
 	// Create a new custom spinner model
 	s := customSpinnerModel{
-		Model:   spinner.New(),
-		message: lipgloss.NewStyle().Foreground(lipgloss.Color("5")).Render("Generating commit message..."),
+		Model: spinner.New(),
+		message: lipgloss.NewStyle().
+			Foreground(lipgloss.Color("#FAFAFA")).
+			Background(lipgloss.Color("#7D56F4")).
+			Bold(true).
+			PaddingLeft(2).
+			PaddingRight(2).
+			Render(" Generating Commit Message "),
 	}
 	s.Spinner = spinner.Dot
-	s.Style = lipgloss.NewStyle().Foreground(lipgloss.Color("5")).PaddingLeft(2).PaddingTop(1) // Standard magenta with left padding
+	s.Style = lipgloss.NewStyle().
+		Foreground(lipgloss.Color("#7D56F4")).
+		PaddingLeft(2).
+		PaddingTop(1)
 
 	// Start the spinner in a separate goroutine
 	p := tea.NewProgram(s)
