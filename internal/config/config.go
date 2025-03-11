@@ -5,6 +5,7 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"runtime"
 )
 
 // Config holds application configuration
@@ -18,14 +19,53 @@ var (
 )
 
 // GetConfigDir returns the directory where the config will be stored
+// Uses platform-specific directories:
+// - Windows: %APPDATA%\Co\
+// - macOS: ~/Library/Application Support/Co/
+// - Linux: ~/.config/co/ (follows XDG spec)
 func GetConfigDir() (string, error) {
-	homeDir, err := os.UserHomeDir()
-	if err != nil {
-		return "", err
+	var configDir string
+
+	// Determine config directory based on OS
+	switch runtime.GOOS {
+	case "windows":
+		// Windows: use %APPDATA%\Co\
+		appData := os.Getenv("APPDATA")
+		if appData == "" {
+			// Fallback if APPDATA is not set (very rare)
+			homeDir, err := os.UserHomeDir()
+			if err != nil {
+				return "", err
+			}
+			appData = filepath.Join(homeDir, "AppData", "Roaming")
+		}
+		configDir = filepath.Join(appData, "Co")
+
+	case "darwin":
+		// macOS: use ~/Library/Application Support/Co/
+		homeDir, err := os.UserHomeDir()
+		if err != nil {
+			return "", err
+		}
+		configDir = filepath.Join(homeDir, "Library", "Application Support", "Co")
+
+	default:
+		// Linux/Unix: use ~/.config/co/ (XDG spec)
+		// First check if XDG_CONFIG_HOME is set
+		xdgConfigHome := os.Getenv("XDG_CONFIG_HOME")
+		if xdgConfigHome != "" {
+			configDir = filepath.Join(xdgConfigHome, "co")
+		} else {
+			// Fall back to default ~/.config/co/
+			homeDir, err := os.UserHomeDir()
+			if err != nil {
+				return "", err
+			}
+			configDir = filepath.Join(homeDir, ".config", "co")
+		}
 	}
 
-	// Use standard XDG config directory instead of custom .co directory
-	configDir := filepath.Join(homeDir, ".config", "co")
+	// Create directory if it doesn't exist
 	if err := os.MkdirAll(configDir, 0700); err != nil {
 		return "", err
 	}
