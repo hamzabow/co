@@ -49,6 +49,7 @@ var (
 			Background(lipgloss.Color("#7D56F4")).
 			PaddingLeft(2).
 			PaddingRight(2).
+			MarginLeft(1).
 			MarginBottom(0)
 
 	// Container style for the entire view

@@ -1,15 +1,14 @@
 package genmessage
 
 import (
-	"bufio"
 	"context"
 	"errors"
 	"fmt"
-	"os"
 	"os/exec"
 	"strings"
 	"time"
 
+	"github.com/hamzabow/co/internal/confirmation"
 	"github.com/hamzabow/co/internal/prompts"
 	"github.com/openai/openai-go"
 	"github.com/openai/openai-go/option"
@@ -73,16 +72,13 @@ func GenerateCommitMessage(key string) (string, error) {
 			return "", ErrNoChangesAtAll
 		}
 
-		// Prompt the user if they want to stage all changes
-		fmt.Print("No staged changes detected. Would you like to stage all changes? (Y/n): ")
-		reader := bufio.NewReader(os.Stdin)
-		response, err := reader.ReadString('\n')
+		// Use the modern Bubble Tea confirmation component
+		confirmed, err := confirmation.Confirm("No staged changes detected. Would you like to stage all changes?", true)
 		if err != nil {
 			return "", err
 		}
 
-		response = strings.TrimSpace(strings.ToLower(response))
-		if response == "" || response == "y" || response == "yes" {
+		if confirmed {
 			// Stage all changes
 			err = stageAllChanges()
 			if err != nil {
