@@ -7,6 +7,7 @@ import (
 
 	"github.com/charmbracelet/lipgloss"
 	"github.com/hamzabow/co/internal/apikeyinput"
+	"github.com/hamzabow/co/internal/config"
 	"github.com/hamzabow/co/internal/genmessage"
 	"github.com/hamzabow/co/internal/messagetextarea"
 )
@@ -26,19 +27,38 @@ func displayError(format string, v ...interface{}) {
 }
 
 func main() {
+	// Try to get API key from environment variable first
 	key := os.Getenv("OPENAI_API_KEY")
+
+	// If not in environment, try to load from config file
 	if key == "" {
 		var err error
-		key, err = apikeyinput.PromptApiKeyWithRetries()
-		if err != nil {
-			if err == apikeyinput.ErrEmptyApiKey {
-				fmt.Println("No API key provided. Exiting.")
-				os.Exit(1)
-			} else {
-				displayError("%v", err)
+		key, err = config.LoadAPIKey()
+		if err != nil && err != config.ErrNoConfigFile {
+			displayError("Failed to load API key from config: %v", err)
+		}
+
+		// If still no key, prompt the user
+		if key == "" {
+			key, err = apikeyinput.PromptApiKeyWithRetries()
+			if err != nil {
+				if err == apikeyinput.ErrEmptyApiKey {
+					fmt.Println("No API key provided. Exiting.")
+					os.Exit(1)
+				} else {
+					displayError("%v", err)
+				}
+			}
+
+			// Save the key to config for future use
+			if key != "" {
+				if err := config.SaveAPIKey(key); err != nil {
+					fmt.Printf("Warning: Failed to save API key to config: %v\n", err)
+				}
 			}
 		}
 	}
+
 	// from now on, key is not empty
 	response, err := genmessage.GenerateCommitMessage(key)
 	if err != nil {

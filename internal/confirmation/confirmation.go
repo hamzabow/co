@@ -38,7 +38,8 @@ var (
 			Background(lipgloss.Color("#7D56F4")).
 			PaddingLeft(2).
 			PaddingRight(2).
-			MarginBottom(1)
+			MarginBottom(1).
+			MarginTop(1)
 
 	// Container style for the entire view
 	containerStyle = lipgloss.NewStyle().
@@ -183,7 +184,7 @@ func (m Model) View() string {
 		view.WriteString(m.choiceStyles[i].Render(choice))
 		view.WriteString(" ")
 	}
-	view.WriteString("\n\n")
+	view.WriteString("\n")
 
 	view.WriteString(helpStyle.Render("Use arrow keys to select, Enter to confirm, Esc to cancel"))
 
