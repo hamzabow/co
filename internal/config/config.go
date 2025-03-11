@@ -66,6 +66,8 @@ func GetConfigDir() (string, error) {
 	}
 
 	// Create directory if it doesn't exist
+	// Note: On Windows, the 0700 permission is approximated as the default NTFS permissions
+	// for the current user. Unix-style permissions don't directly apply on Windows.
 	if err := os.MkdirAll(configDir, 0700); err != nil {
 		return "", err
 	}
@@ -102,6 +104,9 @@ func SaveAPIKey(apiKey string) error {
 	}
 
 	// Write to file with restrictive permissions (600 - user read/write only)
+	// Note: On Windows, these permissions are approximated and don't directly map to
+	// the Unix permission model. Files in %APPDATA% are typically only accessible
+	// to the creating user by default on Windows.
 	return os.WriteFile(configPath, data, 0600)
 }
 
@@ -131,3 +136,7 @@ func LoadAPIKey() (string, error) {
 
 	return config.OpenAIAPIKey, nil
 }
+
+// TODO: For enhanced Windows security, consider implementing Windows-specific
+// ACL control using a library like github.com/hectane/go-acl or using syscalls
+// to set Windows-specific file security attributes.
