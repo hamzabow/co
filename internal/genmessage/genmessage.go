@@ -24,6 +24,7 @@ var (
 	ErrMissingAPIKey     = errors.New("missing OPENAI_API_KEY environment variable")
 	ErrFailedToGetDiffs  = errors.New("failed to get git diffs")
 	ErrNoChangesInRepo   = errors.New("no staged changes detected in the repository; use 'git add' to stage changes")
+	ErrNoChangesAtAll    = errors.New("no changes detected in the repository; make some changes before generating a commit message")
 	ErrOpenAIFetchFailed = errors.New("failed to fetch response from OpenAI API")
 )
 
@@ -62,6 +63,16 @@ func GenerateCommitMessage(key string) (string, error) {
 	}
 
 	if diff == "" {
+		// Check if there are any changes at all in the repository
+		hasChanges, err := hasUnstagedChanges()
+		if err != nil {
+			return "", fmt.Errorf("failed to check for changes: %w", err)
+		}
+
+		if !hasChanges {
+			return "", ErrNoChangesAtAll
+		}
+
 		// Prompt the user if they want to stage all changes
 		fmt.Print("No staged changes detected. Would you like to stage all changes? (Y/n): ")
 		reader := bufio.NewReader(os.Stdin)
@@ -154,4 +165,16 @@ func stageAllChanges() error {
 		return fmt.Errorf("git add command failed: %s (%w)", output, err)
 	}
 	return nil
+}
+
+// hasUnstagedChanges checks if there are any unstaged changes in the repository
+func hasUnstagedChanges() (bool, error) {
+	cmd := exec.Command("git", "status", "--porcelain")
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		return false, fmt.Errorf("git status command failed: %s (%w)", output, err)
+	}
+
+	// If output is empty, there are no changes
+	return len(strings.TrimSpace(string(output))) > 0, nil
 }
