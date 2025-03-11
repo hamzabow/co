@@ -90,6 +90,8 @@ type model struct {
 	attempts    int
 	maxAttempts int
 	showError   bool
+	width       int
+	height      int
 }
 
 func initialModel() model {
@@ -98,7 +100,6 @@ func initialModel() model {
 	ti.Focus()
 	ti.EchoMode = textinput.EchoPassword
 	ti.EchoCharacter = '•'
-	ti.Width = 48
 
 	return model{
 		textInput:   ti,
@@ -107,22 +108,41 @@ func initialModel() model {
 		attempts:    0,
 		maxAttempts: 3,
 		showError:   false,
+		width:       80,
+		height:      24,
 	}
 }
 
 func (m model) Init() tea.Cmd {
-	return textinput.Blink
+	return tea.Batch(
+		textinput.Blink,
+		func() tea.Msg {
+			return tea.WindowSizeMsg{Width: 80, Height: 24}
+		},
+	)
 }
 
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 
 	switch msg := msg.(type) {
+	case tea.WindowSizeMsg:
+		m.width = msg.Width
+		m.height = msg.Height
+
+		inputWidth := m.width - 6
+		if inputWidth < 20 {
+			inputWidth = 20
+		}
+
+		m.textInput.Width = inputWidth - 2
+
+		return m, nil
+
 	case tea.KeyMsg:
 		switch msg.Type {
 		case tea.KeyEnter:
 			if m.textInput.Value() == "" {
-				// Increment attempt counter and show error
 				m.attempts++
 				m.showError = true
 
@@ -147,7 +167,6 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 
 		default:
-			// When the user starts typing after an error, hide the error
 			if m.showError && len(msg.String()) > 0 {
 				m.showError = false
 			}
@@ -168,7 +187,9 @@ func (m model) View() string {
 	view.WriteString(titleStyle.Render(" OpenAI API Key "))
 	view.WriteString("\n\n")
 
-	view.WriteString(inputBoxStyle.Render(m.textInput.View()))
+	dynamicInputBoxStyle := inputBoxStyle.Copy().Width(m.width - 4)
+
+	view.WriteString(dynamicInputBoxStyle.Render(m.textInput.View()))
 	view.WriteString("\n")
 
 	if m.showError {
@@ -192,7 +213,6 @@ func (m model) View() string {
 
 	view.WriteString(helpStyle.Render("Press Enter to submit, Esc to quit, Ctrl+P to toggle visibility"))
 
-	// Apply container style to the entire view
 	return containerStyle.Render(view.String())
 }
 
