@@ -20,7 +20,7 @@ import (
 var (
 	ErrMissingAPIKey     = errors.New("missing OPENAI_API_KEY environment variable")
 	ErrFailedToGetDiffs  = errors.New("failed to get git diffs")
-	ErrNoChangesInRepo   = errors.New("no changes detected in the repository")
+	ErrNoChangesInRepo   = errors.New("no staged changes detected in the repository; use 'git add' to stage changes")
 	ErrOpenAIFetchFailed = errors.New("failed to fetch response from OpenAI API")
 )
 
