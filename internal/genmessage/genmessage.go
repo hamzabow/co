@@ -1,10 +1,13 @@
 package genmessage
 
 import (
+	"bufio"
 	"context"
 	"errors"
 	"fmt"
+	"os"
 	"os/exec"
+	"strings"
 	"time"
 
 	"github.com/hamzabow/co/internal/prompts"
@@ -59,7 +62,35 @@ func GenerateCommitMessage(key string) (string, error) {
 	}
 
 	if diff == "" {
-		return "", ErrNoChangesInRepo
+		// Prompt the user if they want to stage all changes
+		fmt.Print("No staged changes detected. Would you like to stage all changes? (Y/n): ")
+		reader := bufio.NewReader(os.Stdin)
+		response, err := reader.ReadString('\n')
+		if err != nil {
+			return "", err
+		}
+
+		response = strings.TrimSpace(strings.ToLower(response))
+		if response == "" || response == "y" || response == "yes" {
+			// Stage all changes
+			err = stageAllChanges()
+			if err != nil {
+				return "", fmt.Errorf("failed to stage changes: %w", err)
+			}
+			fmt.Println("All changes staged successfully.")
+
+			// Get the diff again after staging
+			diff, err = getGitDiff()
+			if err != nil {
+				return "", ErrFailedToGetDiffs
+			}
+
+			if diff == "" {
+				return "", errors.New("still no changes to commit after staging all changes")
+			}
+		} else {
+			return "", ErrNoChangesInRepo
+		}
 	}
 
 	// prompt := fmt.Sprintf(prompts.GitmojiPrompt, diff)
@@ -113,4 +144,14 @@ func getGitDiff() (string, error) {
 	cmd := exec.Command("git", "diff", "--staged")
 	output, err := cmd.CombinedOutput()
 	return string(output), err
+}
+
+// stageAllChanges stages all changes in the repository using git add .
+func stageAllChanges() error {
+	cmd := exec.Command("git", "add", ".")
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("git add command failed: %s (%w)", output, err)
+	}
+	return nil
 }
