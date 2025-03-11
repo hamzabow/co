@@ -109,10 +109,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case tea.KeyCtrlC:
 			m.result = ResultCancel
 			return m, tea.Quit
-		case tea.KeyEnter:
-			// Don't do anything special for regular Enter
-			// Let it pass to the textarea for normal processing
-		case tea.KeyCtrlJ: // Ctrl+Enter is often mapped to Ctrl+J in terminals
+		case tea.KeyCtrlY: // Use Ctrl+Y as the commit shortcut
 			m.result = ResultCommit
 			return m, tea.Quit
 		default:
@@ -143,7 +140,7 @@ func (m model) View() string {
 	view.WriteString(inputBoxStyle.Render(m.textarea.View()))
 	view.WriteString("\n")
 
-	view.WriteString(helpStyle.Render("  Ctrl+C to quit, Ctrl+Enter to commit"))
+	view.WriteString(helpStyle.Render("  Ctrl+C to quit, Ctrl+Y to commit"))
 
 	// Apply container style to the entire view
 	return containerStyle.Render(view.String())
