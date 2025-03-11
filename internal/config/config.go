@@ -24,7 +24,8 @@ func GetConfigDir() (string, error) {
 		return "", err
 	}
 
-	configDir := filepath.Join(homeDir, ".co")
+	// Use standard XDG config directory instead of custom .co directory
+	configDir := filepath.Join(homeDir, ".config", "co")
 	if err := os.MkdirAll(configDir, 0700); err != nil {
 		return "", err
 	}
