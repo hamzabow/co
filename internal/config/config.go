@@ -1,16 +1,17 @@
 package config
 
 import (
-	"encoding/json"
 	"errors"
 	"os"
 	"path/filepath"
 	"runtime"
+
+	"github.com/BurntSushi/toml"
 )
 
 // Config holds application configuration
 type Config struct {
-	OpenAIAPIKey string `json:"openai_api_key"`
+	OpenAIAPIKey string `toml:"openai_api_key"`
 }
 
 var (
@@ -82,7 +83,7 @@ func GetConfigFilePath() (string, error) {
 		return "", err
 	}
 
-	return filepath.Join(configDir, "config.json"), nil
+	return filepath.Join(configDir, "config.toml"), nil
 }
 
 // SaveAPIKey saves the API key to the config file
@@ -97,17 +98,19 @@ func SaveAPIKey(apiKey string) error {
 		OpenAIAPIKey: apiKey,
 	}
 
-	// Marshal to JSON
-	data, err := json.MarshalIndent(config, "", "  ")
-	if err != nil {
-		return err
-	}
-
-	// Write to file with restrictive permissions (600 - user read/write only)
+	// Create a new file with restrictive permissions
 	// Note: On Windows, these permissions are approximated and don't directly map to
 	// the Unix permission model. Files in %APPDATA% are typically only accessible
 	// to the creating user by default on Windows.
-	return os.WriteFile(configPath, data, 0600)
+	file, err := os.OpenFile(configPath, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0600)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	// Write the TOML data
+	encoder := toml.NewEncoder(file)
+	return encoder.Encode(config)
 }
 
 // LoadAPIKey loads the API key from the config file
@@ -122,15 +125,9 @@ func LoadAPIKey() (string, error) {
 		return "", ErrNoConfigFile
 	}
 
-	// Read file
-	data, err := os.ReadFile(configPath)
-	if err != nil {
-		return "", err
-	}
-
-	// Unmarshal JSON
+	// Read and parse TOML
 	var config Config
-	if err := json.Unmarshal(data, &config); err != nil {
+	if _, err := toml.DecodeFile(configPath, &config); err != nil {
 		return "", err
 	}
 
