@@ -76,19 +76,23 @@ func GetConfigDir() (string, error) {
 	return configDir, nil
 }
 
-// GetConfigFilePath returns the path to the config file
-func GetConfigFilePath() (string, error) {
+// GetCredentialsFilePath returns the path to the credentials file
+func GetCredentialsFilePath() (string, error) {
 	configDir, err := GetConfigDir()
 	if err != nil {
 		return "", err
 	}
 
-	return filepath.Join(configDir, "config.toml"), nil
+	// Use a dot prefix to hide the file on Unix-like systems (Linux, macOS)
+	// On Windows, we'll use the same naming convention for simplicity
+	filename := ".credentials.toml"
+
+	return filepath.Join(configDir, filename), nil
 }
 
-// SaveAPIKey saves the API key to the config file
+// SaveAPIKey saves the API key to the credentials file
 func SaveAPIKey(apiKey string) error {
-	configPath, err := GetConfigFilePath()
+	credentialsPath, err := GetCredentialsFilePath()
 	if err != nil {
 		return err
 	}
@@ -102,7 +106,7 @@ func SaveAPIKey(apiKey string) error {
 	// Note: On Windows, these permissions are approximated and don't directly map to
 	// the Unix permission model. Files in %APPDATA% are typically only accessible
 	// to the creating user by default on Windows.
-	file, err := os.OpenFile(configPath, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0600)
+	file, err := os.OpenFile(credentialsPath, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0600)
 	if err != nil {
 		return err
 	}
@@ -110,24 +114,28 @@ func SaveAPIKey(apiKey string) error {
 
 	// Write the TOML data
 	encoder := toml.NewEncoder(file)
-	return encoder.Encode(config)
+	if err := encoder.Encode(config); err != nil {
+		return err
+	}
+
+	return nil
 }
 
-// LoadAPIKey loads the API key from the config file
+// LoadAPIKey loads the API key from the credentials file
 func LoadAPIKey() (string, error) {
-	configPath, err := GetConfigFilePath()
+	credentialsPath, err := GetCredentialsFilePath()
 	if err != nil {
 		return "", err
 	}
 
 	// Check if file exists
-	if _, err := os.Stat(configPath); os.IsNotExist(err) {
+	if _, err := os.Stat(credentialsPath); os.IsNotExist(err) {
 		return "", ErrNoConfigFile
 	}
 
 	// Read and parse TOML
 	var config Config
-	if _, err := toml.DecodeFile(configPath, &config); err != nil {
+	if _, err := toml.DecodeFile(credentialsPath, &config); err != nil {
 		return "", err
 	}
 
