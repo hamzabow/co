@@ -34,34 +34,32 @@ func displayError(format string, v ...interface{}) {
 }
 
 func main() {
-	// Try to get API key from environment variable first
-	key := os.Getenv("OPENAI_API_KEY")
+	// Initialize API key variable
+	var key string
+	var err error
 
-	// If not in environment, try to load from config file
+	// Try to load API key from config file
+	key, err = config.LoadAPIKey(ProviderOpenAI)
+	if err != nil && err != config.ErrNoConfigFile && err != config.ErrProviderNotFound {
+		displayError("Failed to load API key from config: %v", err)
+	}
+
+	// If no key found, prompt the user
 	if key == "" {
-		var err error
-		key, err = config.LoadAPIKey(ProviderOpenAI)
-		if err != nil && err != config.ErrNoConfigFile && err != config.ErrProviderNotFound {
-			displayError("Failed to load API key from config: %v", err)
+		key, err = apikeyinput.PromptApiKeyWithRetries()
+		if err != nil {
+			if err == apikeyinput.ErrEmptyApiKey {
+				fmt.Println("No API key provided. Exiting.")
+				os.Exit(1)
+			} else {
+				displayError("%v", err)
+			}
 		}
 
-		// If still no key, prompt the user
-		if key == "" {
-			key, err = apikeyinput.PromptApiKeyWithRetries()
-			if err != nil {
-				if err == apikeyinput.ErrEmptyApiKey {
-					fmt.Println("No API key provided. Exiting.")
-					os.Exit(1)
-				} else {
-					displayError("%v", err)
-				}
-			}
-
-			// Save the key to config for future use
-			if key != "" {
-				if err := config.SaveAPIKey(ProviderOpenAI, key); err != nil {
-					fmt.Printf("Warning: Failed to save API key to config: %v\n", err)
-				}
+		// Save the key to config for future use
+		if key != "" {
+			if err := config.SaveAPIKey(ProviderOpenAI, key); err != nil {
+				fmt.Printf("Warning: Failed to save API key to config: %v\n", err)
 			}
 		}
 	}

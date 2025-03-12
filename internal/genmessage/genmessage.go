@@ -84,7 +84,7 @@ func GenerateCommitMessage(key string) (string, error) {
 			if err != nil {
 				return "", fmt.Errorf("failed to stage changes: %w", err)
 			}
-			fmt.Println("All changes staged successfully.")
+			fmt.Println(" All changes staged successfully.")
 
 			// Get the diff again after staging
 			diff, err = getGitDiff()
