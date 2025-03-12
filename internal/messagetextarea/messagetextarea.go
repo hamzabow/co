@@ -74,8 +74,11 @@ func initialModel(initialValue string) model {
 	ti.Placeholder = "Commit message ..."
 	ti.Focus()
 	ti.ShowLineNumbers = false
-
 	ti.Prompt = " "
+
+	// Allow effectively unlimited text and proper scrolling behavior
+	ti.CharLimit = 4000 // Set a high character limit (default might be smaller)
+	ti.SetHeight(10)    // Initial height will be updated dynamically later
 
 	// Match the color scheme with the API key input
 	ti.FocusedStyle.Base = lipgloss.NewStyle().
@@ -124,8 +127,18 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		// Update the textarea width
 		m.textarea.SetWidth(textareaWidth)
 
-		// Adjust height if needed, leaving space for title and help text
-		m.textarea.SetHeight(10) // Or adjust dynamically if needed
+		// Make height dynamic - use about 60% of available terminal height
+		// but leave space for title and help text (about 5 lines)
+		textareaHeight := (m.height * 60 / 100) - 5
+		if textareaHeight < 5 { // Minimum reasonable height
+			textareaHeight = 5
+		}
+		if textareaHeight > 30 { // Reasonable maximum height
+			textareaHeight = 30
+		}
+
+		// Update the textarea height
+		m.textarea.SetHeight(textareaHeight)
 
 		return m, nil
 
@@ -172,7 +185,12 @@ func (m model) View() string {
 	view.WriteString(dynamicInputBoxStyle.Render(m.textarea.View()))
 	view.WriteString("\n")
 
-	view.WriteString(helpStyle.Render("  Ctrl+C to quit, Ctrl+Y to commit"))
+	// Create a more helpful instruction line
+	helpText := "  Ctrl+C to quit, Ctrl+Y to commit"
+	if len(m.textarea.Value()) > 0 {
+		helpText += " | ↑/↓ arrows to scroll"
+	}
+	view.WriteString(helpStyle.Render(helpText))
 
 	// Apply container style to the entire view
 	return containerStyle.Render(view.String())
