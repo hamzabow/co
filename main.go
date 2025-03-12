@@ -12,6 +12,13 @@ import (
 	"github.com/hamzabow/co/internal/messagetextarea"
 )
 
+// Provider constants for API keys
+const (
+	ProviderOpenAI    = "openai"
+	ProviderAnthropic = "anthropic"
+	ProviderOllama    = "ollama"
+)
+
 // Define error style
 var errorStyle = lipgloss.NewStyle().
 	Foreground(lipgloss.Color("#FF5555")).
@@ -33,8 +40,8 @@ func main() {
 	// If not in environment, try to load from config file
 	if key == "" {
 		var err error
-		key, err = config.LoadAPIKey()
-		if err != nil && err != config.ErrNoConfigFile {
+		key, err = config.LoadAPIKey(ProviderOpenAI)
+		if err != nil && err != config.ErrNoConfigFile && err != config.ErrProviderNotFound {
 			displayError("Failed to load API key from config: %v", err)
 		}
 
@@ -52,7 +59,7 @@ func main() {
 
 			// Save the key to config for future use
 			if key != "" {
-				if err := config.SaveAPIKey(key); err != nil {
+				if err := config.SaveAPIKey(ProviderOpenAI, key); err != nil {
 					fmt.Printf("Warning: Failed to save API key to config: %v\n", err)
 				}
 			}

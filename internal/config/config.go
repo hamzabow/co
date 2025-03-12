@@ -6,6 +6,7 @@ import (
 	"crypto/rand"
 	"crypto/sha256"
 	"encoding/base64"
+	"encoding/json"
 	"errors"
 	"io"
 	"os"
@@ -18,7 +19,21 @@ var (
 	ErrNoConfigFile = errors.New("config file does not exist")
 	// ErrDecryptionFailed is returned when credential decryption fails
 	ErrDecryptionFailed = errors.New("failed to decrypt credentials")
+	// ErrProviderNotFound is returned when the requested provider is not found
+	ErrProviderNotFound = errors.New("provider credentials not found")
 )
+
+// Credentials holds API keys for different providers
+type Credentials struct {
+	APIKeys map[string]string `json:"api_keys"`
+}
+
+// NewCredentials initializes a new empty credentials object
+func NewCredentials() *Credentials {
+	return &Credentials{
+		APIKeys: make(map[string]string),
+	}
+}
 
 // GetConfigDir returns the directory where the config will be stored
 // Uses platform-specific directories:
@@ -194,15 +209,35 @@ func decrypt(encodedCiphertext string) (string, error) {
 	return string(plaintext), nil
 }
 
-// SaveAPIKey saves the API key to the encrypted credentials file
-func SaveAPIKey(apiKey string) error {
+// SaveAPIKey saves an API key for a specific provider to the encrypted credentials file
+func SaveAPIKey(provider, apiKey string) error {
 	credentialsPath, err := GetCredentialsFilePath()
 	if err != nil {
 		return err
 	}
 
-	// Encrypt the API key
-	encryptedKey, err := encrypt(apiKey)
+	// Load existing credentials or create new ones
+	credentials := NewCredentials()
+	if _, err := os.Stat(credentialsPath); !os.IsNotExist(err) {
+		// File exists, try to load existing credentials
+		existingCreds, loadErr := loadCredentials()
+		if loadErr == nil {
+			credentials = existingCreds
+		}
+		// If we can't load existing credentials, we'll just overwrite with new ones
+	}
+
+	// Add or update the API key for the specified provider
+	credentials.APIKeys[provider] = apiKey
+
+	// Serialize credentials to JSON
+	jsonData, err := json.Marshal(credentials)
+	if err != nil {
+		return err
+	}
+
+	// Encrypt the JSON data
+	encryptedData, err := encrypt(string(jsonData))
 	if err != nil {
 		return err
 	}
@@ -215,7 +250,7 @@ func SaveAPIKey(apiKey string) error {
 	defer file.Close()
 
 	// Write the encrypted data directly to file
-	_, err = file.WriteString(encryptedKey)
+	_, err = file.WriteString(encryptedData)
 	if err != nil {
 		return err
 	}
@@ -223,31 +258,109 @@ func SaveAPIKey(apiKey string) error {
 	return nil
 }
 
-// LoadAPIKey loads the API key from the encrypted credentials file
-func LoadAPIKey() (string, error) {
-	credentialsPath, err := GetCredentialsFilePath()
+// LoadAPIKey loads the API key for a specific provider from the encrypted credentials file
+func LoadAPIKey(provider string) (string, error) {
+	credentials, err := loadCredentials()
 	if err != nil {
 		return "", err
 	}
 
+	apiKey, exists := credentials.APIKeys[provider]
+	if !exists {
+		return "", ErrProviderNotFound
+	}
+
+	return apiKey, nil
+}
+
+// loadCredentials loads the encrypted credentials file and returns the parsed credentials
+func loadCredentials() (*Credentials, error) {
+	credentialsPath, err := GetCredentialsFilePath()
+	if err != nil {
+		return nil, err
+	}
+
 	// Check if file exists
 	if _, err := os.Stat(credentialsPath); os.IsNotExist(err) {
-		return "", ErrNoConfigFile
+		return nil, ErrNoConfigFile
 	}
 
 	// Read the encrypted content
 	encryptedBytes, err := os.ReadFile(credentialsPath)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	// Decrypt the content
-	apiKey, err := decrypt(string(encryptedBytes))
+	jsonData, err := decrypt(string(encryptedBytes))
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
-	return apiKey, nil
+	// Parse JSON into credentials
+	credentials := NewCredentials()
+	if err := json.Unmarshal([]byte(jsonData), credentials); err != nil {
+		return nil, err
+	}
+
+	return credentials, nil
+}
+
+// GetAllAPIKeys returns all stored API keys
+func GetAllAPIKeys() (map[string]string, error) {
+	credentials, err := loadCredentials()
+	if err != nil {
+		return nil, err
+	}
+
+	// Return a copy of the map to prevent modification of internal state
+	result := make(map[string]string)
+	for k, v := range credentials.APIKeys {
+		result[k] = v
+	}
+
+	return result, nil
+}
+
+// DeleteAPIKey removes an API key for a specific provider
+func DeleteAPIKey(provider string) error {
+	credentials, err := loadCredentials()
+	if err != nil {
+		return err
+	}
+
+	if _, exists := credentials.APIKeys[provider]; !exists {
+		return ErrProviderNotFound
+	}
+
+	delete(credentials.APIKeys, provider)
+
+	// Serialize credentials to JSON
+	jsonData, err := json.Marshal(credentials)
+	if err != nil {
+		return err
+	}
+
+	// Encrypt the JSON data
+	encryptedData, err := encrypt(string(jsonData))
+	if err != nil {
+		return err
+	}
+
+	// Write back to file
+	credentialsPath, err := GetCredentialsFilePath()
+	if err != nil {
+		return err
+	}
+
+	file, err := os.OpenFile(credentialsPath, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0600)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	_, err = file.WriteString(encryptedData)
+	return err
 }
 
 // TODO: For enhanced Windows security, consider implementing Windows-specific
