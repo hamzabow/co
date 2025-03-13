@@ -187,7 +187,7 @@ func (m model) View() string {
 	view.WriteString(titleStyle.Render(" OpenAI API Key "))
 	view.WriteString("\n\n")
 
-	dynamicInputBoxStyle := inputBoxStyle.Copy().Width(m.width - 4)
+	dynamicInputBoxStyle := inputBoxStyle.Width(m.width - 4)
 
 	view.WriteString(dynamicInputBoxStyle.Render(m.textInput.View()))
 	view.WriteString("\n")
@@ -214,15 +214,4 @@ func (m model) View() string {
 	view.WriteString(helpStyle.Render("Press Enter to submit, Esc to quit, Ctrl+P to toggle visibility"))
 
 	return containerStyle.Render(view.String())
-}
-
-func (m model) toggleEchoMode() {
-	if m.textInput.EchoMode != textinput.EchoPassword {
-		m.textInput.EchoMode = textinput.EchoPassword
-		m.textInput.EchoCharacter = '•'
-		return
-
-	}
-	m.textInput.EchoMode = textinput.EchoNormal
-
 }
