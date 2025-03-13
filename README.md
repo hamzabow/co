@@ -1,5 +1,8 @@
 # co - AI-Powered Git Commit Message Generator
 
+[![Build and Test](https://github.com/hamzabow/co/actions/workflows/build.yml/badge.svg)](https://github.com/hamzabow/co/actions/workflows/build.yml)
+[![Release](https://github.com/hamzabow/co/actions/workflows/release.yml/badge.svg)](https://github.com/hamzabow/co/actions/workflows/release.yml)
+
 `co` is a command-line tool that uses OpenAI's GPT-4o to generate meaningful, well-formatted git commit messages based on your staged changes.
 
 ## Features
