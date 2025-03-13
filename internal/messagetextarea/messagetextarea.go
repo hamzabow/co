@@ -179,7 +179,7 @@ func (m model) View() string {
 	view.WriteString("\n\n")
 
 	// Dynamically set the width of the input box style based on terminal width
-	dynamicInputBoxStyle := inputBoxStyle.Copy().Width(m.width - 4) // Account for container margin
+	dynamicInputBoxStyle := inputBoxStyle.Width(m.width - 4) // Account for container margin
 
 	// Wrap the textarea in the dynamicInputBoxStyle
 	view.WriteString(dynamicInputBoxStyle.Render(m.textarea.View()))
