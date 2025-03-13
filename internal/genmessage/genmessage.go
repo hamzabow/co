@@ -123,7 +123,8 @@ func GenerateCommitMessage(key string) (string, error) {
 	// Start the spinner in a separate goroutine
 	p := tea.NewProgram(s)
 	go func() {
-		if err := p.Start(); err != nil {
+		_, err := p.Run()
+		if err != nil {
 			fmt.Println("Error starting spinner:", err)
 		}
 	}()
