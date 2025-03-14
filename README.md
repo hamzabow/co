@@ -79,5 +79,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Acknowledgments
 
-- Built with [Bubble Tea](https://github.com/charmbracelet/bubbletea) for the terminal UI
-- Uses the OpenAI API for generating commit messages
+This project uses components and utilities from [Bubble Tea](https://github.com/charmbracelet/bubbletea) for its terminal user interface.
